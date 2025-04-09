@@ -162,126 +162,125 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [incorrectAnswers, setIncorrectAnswers] = useState([]);
-  const [questionLimitReached, setQuestionLimitReached] = useState(false);
-  const [timer, setTimer] = useState(0); // Track time remaining
-  const [timerActive, setTimerActive] = useState(false);
-  const [questionsAnswered, setQuestionsAnswered] = useState(0); // Track questions answered
+  const [timer, setTimer] = useState(0);
+  const [quizLocked, setQuizLocked] = useState(false);
+  const [questionsAnswered, setQuestionsAnswered] = useState(0);
+  const [shuffledQuizData, setShuffledQuizData] = useState([]);
 
-  // Initialize quiz with shuffled questions
-  const shuffledQuizData = shuffleArray(quizData);
-
-  // Check for saved timer and questions answered from localStorage
   useEffect(() => {
-    const savedTimer = localStorage.getItem('quizTimer');
-    const savedLimitReached = localStorage.getItem('questionLimitReached') === 'true';
-    const savedQuestionsAnswered = Number(localStorage.getItem('questionsAnswered')) || 0;
+    setShuffledQuizData(shuffleArray(quizData));
 
-    if (savedTimer && savedLimitReached) {
-      setTimer(Number(savedTimer));
-      setQuestionLimitReached(true);
-      setQuestionsAnswered(savedQuestionsAnswered);
+    const savedTimestamp = localStorage.getItem('nextAvailableTime');
+    const now = Date.now();
+
+    if (savedTimestamp && now < parseInt(savedTimestamp)) {
+      const remainingSeconds = Math.floor((parseInt(savedTimestamp) - now) / 1000);
+      setTimer(remainingSeconds);
+      setQuizLocked(true);
+    } else {
+      localStorage.removeItem('nextAvailableTime');
+      setQuizLocked(false);
     }
   }, []);
 
-  // Start the timer and set up localStorage
   useEffect(() => {
-    if (timerActive && timer > 0) {
-      const interval = setInterval(() => {
-        setTimer((prevTime) => {
-          const newTime = prevTime - 1;
-          if (newTime <= 0) {
+    let interval;
+    if (quizLocked && timer > 0) {
+      interval = setInterval(() => {
+        setTimer(prev => {
+          if (prev <= 1) {
             clearInterval(interval);
-            setTimerActive(false);
-            setQuestionLimitReached(false);
-            localStorage.removeItem('quizTimer');
-            localStorage.removeItem('questionLimitReached');
-          } else {
-            localStorage.setItem('quizTimer', newTime);
+            setQuizLocked(false);
+            localStorage.removeItem('nextAvailableTime');
+            return 0;
           }
-          return newTime;
+          return prev - 1;
         });
       }, 1000);
-      return () => clearInterval(interval);
     }
-  }, [timerActive, timer]);
+    return () => clearInterval(interval);
+  }, [quizLocked, timer]);
 
   const handleAnswer = (option) => {
     const current = shuffledQuizData[currentQuestion];
     const isCorrect = option === current.answer;
 
     if (isCorrect) {
-      setScore(score + 1);
+      setScore(prev => prev + 1);
     } else {
-      setIncorrectAnswers([...incorrectAnswers, { ...current, selected: option }]);
+      setIncorrectAnswers(prev => [...prev, { ...current, selected: option }]);
     }
 
     const nextQuestion = currentQuestion + 1;
-    if (nextQuestion < shuffledQuizData.length && questionsAnswered < 5) {
+
+    if (nextQuestion < shuffledQuizData.length && questionsAnswered + 1 < 5) {
       setCurrentQuestion(nextQuestion);
-      setQuestionsAnswered(questionsAnswered + 1);
-      localStorage.setItem('questionsAnswered', questionsAnswered + 1);
+      setQuestionsAnswered(prev => prev + 1);
     } else {
       setCompleted(true);
-      setQuestionLimitReached(true);
-      localStorage.setItem('questionLimitReached', 'true');
-      setTimer(60 * 60); // 1 hour timer
-      setTimerActive(true);
-      localStorage.setItem('quizTimer', 60 * 60); // Save 1 hour timer to localStorage
+      lockQuizForAnHour();
     }
   };
 
+  const lockQuizForAnHour = () => {
+    const nextTime = Date.now() + 60 * 60 * 1000; // 1 hour
+    localStorage.setItem('nextAvailableTime', nextTime.toString());
+    setQuizLocked(true);
+    setTimer(3600);
+  };
+
   return (
-  <div className="max-w-xl mx-auto mt-10 p-4 text-center">
-    <h1 className="text-3xl font-bold mb-6">Welcome to MedGrow Quiz!</h1>
-    
-    {!completed && !questionLimitReached ? (
-      <div>
-        <h2 className="text-xl font-semibold mb-4">{shuffledQuizData[currentQuestion].question}</h2>
-        <div className="grid gap-2">
-          {shuffledQuizData[currentQuestion].options.map((option, index) => (
-            <button 
-              key={index} 
-              onClick={() => handleAnswer(option)} 
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-            >
-              {option}
-            </button>
-          ))}
+    <div className="max-w-xl mx-auto p-4 text-center">
+      <h1 className="text-3xl font-bold mb-6">Welcome to MedGrow Quiz!</h1>
+
+      {quizLocked ? (
+        <div>
+          <p className="text-red-500 mb-2">
+            You've answered 5 questions. Please come back in:
+          </p>
+          <h2 className="text-xl font-bold">
+            {Math.floor(timer / 60)}m {timer % 60}s
+          </h2>
         </div>
-      </div>
-    ) : (
-      <div>
-        <h2 className="text-2xl font-bold mb-4">You did it! 🎉</h2>
-        <p className="mb-2">You answered {score} out of {shuffledQuizData.length} questions correctly.</p>
-        <p className="mb-6">That means <strong>${score}</strong> will be donated to support future medical students!</p>
-        
-        {incorrectAnswers.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold mb-2">What You Missed:</h3>
-            <ul className="list-disc list-inside space-y-2">
-              {incorrectAnswers.map((item, index) => (
-                <li key={index}>
-                  <strong>Q:</strong> {item.question}<br />
-                  <strong>Your Answer:</strong> {item.selected}<br />
-                  <strong>Correct Answer:</strong> {item.answer}
-                </li>
-              ))}
-            </ul>
+      ) : !completed ? (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">
+            {shuffledQuizData[currentQuestion]?.question}
+          </h2>
+          <div className="grid gap-2">
+            {shuffledQuizData[currentQuestion]?.options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleAnswer(option)}
+                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+              >
+                {option}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
-    )}
+        </div>
+      ) : (
+        <div>
+          <h2 className="text-2xl font-bold mb-2">You did it! 🎉</h2>
+          <p className="mb-2">You got {score} out of 5 correct!</p>
+          <p className="mb-4">${score} will be donated to future medical students!</p>
 
-    {questionLimitReached && !timerActive && (
-      <div className="mt-4">
-        <p>You have answered 5 questions. Please come back after an hour to answer more questions.</p>
-      </div>
-    )}
-
-    {timerActive && (
-      <div className="mt-4">
-        <h3>Time remaining to answer again: {Math.floor(timer / 60)} minutes {timer % 60} seconds</h3>
-      </div>
-    )}
-  </div>
-);
+          {incorrectAnswers.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-lg mb-2">What You Missed:</h3>
+              <ul className="list-disc list-inside space-y-2 text-left">
+                {incorrectAnswers.map((item, index) => (
+                  <li key={index}>
+                    <strong>Q:</strong> {item.question}<br />
+                    <strong>Your Answer:</strong> {item.selected}<br />
+                    <strong>Correct Answer:</strong> {item.answer}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
