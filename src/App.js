@@ -231,7 +231,7 @@ export default function App() {
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-4 text-center">
+    <div className="max-w-xl mx-auto mt-10 p-4 text-center flex flex-col justify-center items-center min-h-screen">
       <h1>Welcome to MedGrow Quiz!</h1>
       {!completed && !questionLimitReached ? (
         <div>
