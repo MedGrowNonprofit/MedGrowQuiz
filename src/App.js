@@ -231,56 +231,57 @@ export default function App() {
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-10 p-4 text-center flex flex-col justify-center items-center min-h-screen">
-      <h1>Welcome to MedGrow Quiz!</h1>
-      {!completed && !questionLimitReached ? (
-        <div>
-          <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">{shuffledQuizData[currentQuestion].question}</h2>
-            <div className="grid gap-2">
-              {shuffledQuizData[currentQuestion].options.map((option, index) => (
-                <button key={index} onClick={() => handleAnswer(option)} className="bg-blue-500 text-white p-2 rounded">
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
+  <div className="max-w-xl mx-auto mt-10 p-4 text-center">
+    <h1 className="text-3xl font-bold mb-6">Welcome to MedGrow Quiz!</h1>
+    
+    {!completed && !questionLimitReached ? (
+      <div>
+        <h2 className="text-xl font-semibold mb-4">{shuffledQuizData[currentQuestion].question}</h2>
+        <div className="grid gap-2">
+          {shuffledQuizData[currentQuestion].options.map((option, index) => (
+            <button 
+              key={index} 
+              onClick={() => handleAnswer(option)} 
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+            >
+              {option}
+            </button>
+          ))}
         </div>
-      ) : (
-        <div>
-          <h2 className="text-2xl font-bold mb-4">You did it! 🎉</h2>
-          <p>You answered {score} out of {shuffledQuizData.length} questions correctly.</p>
-          <p>That means ${score} will be donated to support future medical students!</p>
+      </div>
+    ) : (
+      <div>
+        <h2 className="text-2xl font-bold mb-4">You did it! 🎉</h2>
+        <p className="mb-2">You answered {score} out of {shuffledQuizData.length} questions correctly.</p>
+        <p className="mb-6">That means <strong>${score}</strong> will be donated to support future medical students!</p>
+        
+        {incorrectAnswers.length > 0 && (
           <div>
-            {incorrectAnswers.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-lg mb-2">What You Missed:</h3>
-                <ul className="list-disc list-inside space-y-2">
-                  {incorrectAnswers.map((item, index) => (
-                    <li key={index}>
-                      <strong>Q:</strong> {item.question}<br />
-                      <strong>Your Answer:</strong> {item.selected}<br />
-                      <strong>Correct Answer:</strong> {item.answer}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <h3 className="text-lg font-semibold mb-2">What You Missed:</h3>
+            <ul className="list-disc list-inside space-y-2">
+              {incorrectAnswers.map((item, index) => (
+                <li key={index}>
+                  <strong>Q:</strong> {item.question}<br />
+                  <strong>Your Answer:</strong> {item.selected}<br />
+                  <strong>Correct Answer:</strong> {item.answer}
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    )}
 
-      {questionLimitReached && !timerActive && (
-        <div>
-          <p>You have answered 5 questions. Please come back after an hour to answer more questions.</p>
-        </div>
-      )}
+    {questionLimitReached && !timerActive && (
+      <div className="mt-4">
+        <p>You have answered 5 questions. Please come back after an hour to answer more questions.</p>
+      </div>
+    )}
 
-      {timerActive && (
-        <div>
-          <h3>Time remaining to answer again: {Math.floor(timer / 60)} minutes {timer % 60} seconds</h3>
-        </div>
-      )}
-    </div>
-  );
-}
+    {timerActive && (
+      <div className="mt-4">
+        <h3>Time remaining to answer again: {Math.floor(timer / 60)} minutes {timer % 60} seconds</h3>
+      </div>
+    )}
+  </div>
+);
