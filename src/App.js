@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from './components/ui/card';
-import { Button } from './components/ui/button';
 import './styles.css';
 
 // 100 quiz data
@@ -120,7 +118,6 @@ const quizData = [
     options: ["Regulate blood sugar", "Filter waste from blood", "Produce insulin", "Control digestion"],
     answer: "Filter waste from blood"
   },
-  // Add more questions here up to 100!
   {
     question: "What does MRI stand for?",
     options: ["Magnetic Resistance Imaging", "Magnetic Resonance Imaging", "Molecular Radiation Imaging", "Medical Radio Imaging"],
@@ -145,8 +142,7 @@ const quizData = [
     question: "What is a common method used to test for bone fractures?",
     options: ["CT scan", "X-ray", "MRI", "Ultrasound"],
     answer: "X-ray"
-  },
-  // Repeat the pattern above for the rest of your 100 questions.
+  }
 ];
 
 const shuffleArray = (array) => {
@@ -212,14 +208,13 @@ export default function App() {
       setIncorrectAnswers(prev => [...prev, { ...current, selected: option }]);
     }
 
-    const nextQuestion = currentQuestion + 1;
+    setQuestionsAnswered(prev => prev + 1);
 
-    if (nextQuestion < shuffledQuizData.length && questionsAnswered + 1 < 5) {
-      setCurrentQuestion(nextQuestion);
-      setQuestionsAnswered(prev => prev + 1);
-    } else {
+    if (questionsAnswered + 1 >= 5) {
       setCompleted(true);
       lockQuizForAnHour();
+    } else {
+      setCurrentQuestion(prev => prev + 1);
     }
   };
 
@@ -230,22 +225,61 @@ export default function App() {
     setTimer(3600);
   };
 
-  return (
-    <div className="max-w-xl mx-auto p-4 text-center">
-      <h1 className="text-3xl font-bold mb-6">Welcome to MedGrow Quiz!</h1>
+  const renderResults = () => {
+    return (
+      <div className="results">
+        <h2>Quiz Complete! 🎉</h2>
+        <p><strong>You answered {score} out of 5 questions correctly!</strong></p>
+        <p><strong>You raised ${score} for future medical students!</strong></p>
 
-      {quizLocked ? (
+        {incorrectAnswers.length > 0 && (
+          <div className="incorrect-answers">
+            <h3>Questions You Missed:</h3>
+            <ul>
+              {incorrectAnswers.map((item, index) => (
+                <li key={index}>
+                  <strong>Q: </strong> {item.question}<br />
+                  <strong>Your Answer: </strong> {item.selected}<br />
+                  <strong>Correct Answer: </strong> {item.answer}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="timer">
+          <p>Please come back in:</p>
+          <h2>{Math.floor(timer / 60)}m {timer % 60}s</h2>
+        </div>
+      </div>
+    );
+  };
+
+  if (quizLocked && !completed) {
+    return (
+      <div className="container">
+        <h1>Welcome to MedGrow Quiz!</h1>
         <div>
           <p className="text-red-500 mb-2">
-            You've answered 5 questions. Please come back in:
+            Please come back in:
           </p>
-          <h2 className="text-xl font-bold">
+          <h2>
             {Math.floor(timer / 60)}m {timer % 60}s
           </h2>
         </div>
-      ) : !completed ? (
+      </div>
+    );
+  }
+
+  return (
+    <div className="container">
+      <h1>Welcome to MedGrow Quiz!</h1>
+      
+      {completed ? (
+        renderResults()
+      ) : (
         <div>
-          <h2 className="text-xl font-semibold mb-4">
+          <h2 className="mb-4">
             {shuffledQuizData[currentQuestion]?.question}
           </h2>
           <div className="grid gap-2">
@@ -253,33 +287,12 @@ export default function App() {
               <button
                 key={index}
                 onClick={() => handleAnswer(option)}
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                className="btn"
               >
                 {option}
               </button>
             ))}
           </div>
-        </div>
-      ) : (
-        <div>
-          <h2 className="text-2xl font-bold mb-2">You did it! 🎉</h2>
-          <p className="mb-2">You got {score} out of 5 correct!</p>
-          <p className="mb-4">${score} will be donated to future medical students!</p>
-
-          {incorrectAnswers.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-lg mb-2">What You Missed:</h3>
-              <ul className="list-disc list-inside space-y-2 text-center">
-                {incorrectAnswers.map((item, index) => (
-                  <li key={index}>
-                    <strong>Q:</strong> {item.question}<br />
-                    <strong>Your Answer:</strong> {item.selected}<br />
-                    <strong>Correct Answer:</strong> {item.answer}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       )}
     </div>
