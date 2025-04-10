@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from './components/ui/card';
 import { Button } from './components/ui/button';
+import './styles.css';
 
 // 100 quiz data
 const quizData = [
@@ -268,7 +269,7 @@ export default function App() {
           {incorrectAnswers.length > 0 && (
             <div>
               <h3 className="font-semibold text-lg mb-2">What You Missed:</h3>
-              <ul className="list-disc list-inside space-y-2 text-left">
+              <ul className="list-disc list-inside space-y-2 text-center">
                 {incorrectAnswers.map((item, index) => (
                   <li key={index}>
                     <strong>Q:</strong> {item.question}<br />
